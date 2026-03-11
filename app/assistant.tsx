@@ -5,7 +5,6 @@ import {
   useChatRuntime,
   AssistantChatTransport,
 } from "@assistant-ui/react-ai-sdk";
-import { lastAssistantMessageIsCompleteWithToolCalls } from "ai";
 import { Thread } from "@/components/assistant-ui/thread";
 import {
   SidebarInset,
@@ -18,7 +17,6 @@ import { motion } from "framer-motion";
 
 export const Assistant = () => {
   const runtime = useChatRuntime({
-    sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
     transport: new AssistantChatTransport({
       api: "/api/chat",
     }),
@@ -28,7 +26,7 @@ export const Assistant = () => {
     <AssistantRuntimeProvider runtime={runtime}>
       <SidebarProvider>
         <div className="flex h-dvh w-full pr-0.5">
-          
+
           {/* Animated Sidebar */}
           <motion.div
             initial={{ x: -40, opacity: 0 }}
@@ -40,7 +38,7 @@ export const Assistant = () => {
 
           {/* Main Area */}
           <SidebarInset>
-            
+
             {/* Animated Header */}
             <motion.header
               initial={{ y: -20, opacity: 0 }}
@@ -50,7 +48,6 @@ export const Assistant = () => {
             >
               <SidebarTrigger />
               <Separator orientation="vertical" className="mr-2 h-4" />
-
               <h1 className="text-lg font-semibold">
                 🤖 Welcome to SmartDNA Chat Bot
               </h1>
