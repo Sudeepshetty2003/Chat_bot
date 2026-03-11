@@ -3,7 +3,8 @@ import { createOpenAI } from "@ai-sdk/openai";
 import { streamText, convertToModelMessages } from "ai";
 import { companyInfo } from "@/data/company-info";
 
-export const runtime = "edge";
+export const runtime = "nodejs";
+export const maxDuration = 30;
 
 const groq = createOpenAI({
   apiKey: process.env.OPENAI_API_KEY!,
@@ -48,7 +49,7 @@ export async function POST(req: Request) {
   // ==============================
   // EXTRACT LAST USER MESSAGE ONLY
   // ==============================
-  const lastUserMessageObj = [...messages].reverse().find((m) => m.role === "user");
+  const lastUserMessageObj = [...messages].reverse().find((m: any) => m.role === "user");
 
   let lastMessage = "";
   if (lastUserMessageObj?.parts) {
@@ -70,12 +71,12 @@ export async function POST(req: Request) {
   // ==============================
   const buildHistory = async () => {
     const converted = await convertToModelMessages(messages);
-    const filtered = converted.filter((m) => {
+    const filtered = converted.filter((m: any) => {
       if (Array.isArray(m.content)) return m.content.length > 0;
       if (typeof m.content === "string") return m.content.trim().length > 0;
       return false;
     });
-    return filtered.slice(-6); // ← KEY FIX: limit to last 6 messages only
+    return filtered.slice(-6);
   };
 
   // ==============================
