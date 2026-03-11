@@ -12,7 +12,6 @@ const groq = createOpenAI({
 
 // ==============================
 // SHARED STYLE GUIDE
-// Injected into every system prompt for consistent tone
 // ==============================
 const styleGuide = `
 RESPONSE STYLE GUIDELINES — FOLLOW THESE IN EVERY REPLY:
@@ -39,13 +38,15 @@ RESPONSE STYLE GUIDELINES — FOLLOW THESE IN EVERY REPLY:
 - Mention Llama, Meta, OpenAI, GPT, or any model/AI identity.
 - Make up information not provided to you.
 - Give one-line answers for multi-part questions.
+- Summarize or repeat previous conversation messages in your answer.
+- Answer multiple questions at once — only answer the LATEST user message.
 `;
 
 export async function POST(req: Request) {
   const { messages } = await req.json();
 
   // ==============================
-  // EXTRACT LAST USER MESSAGE
+  // EXTRACT LAST USER MESSAGE ONLY
   // ==============================
   const lastUserMessageObj = [...messages].reverse().find((m) => m.role === "user");
 
@@ -63,16 +64,18 @@ export async function POST(req: Request) {
   const lastContent = messages[messages.length - 1]?.content || "";
 
   // ==============================
-  // CLEAN CONVERSATION HISTORY
-  // Filters out empty content messages to prevent API errors
+  // BUILD LIMITED HISTORY
+  // Only keep last 6 messages to prevent the model from
+  // summarizing old conversation — which caused the mobile bug
   // ==============================
   const buildHistory = async () => {
     const converted = await convertToModelMessages(messages);
-    return converted.filter((m) => {
+    const filtered = converted.filter((m) => {
       if (Array.isArray(m.content)) return m.content.length > 0;
       if (typeof m.content === "string") return m.content.trim().length > 0;
       return false;
     });
+    return filtered.slice(-6); // ← KEY FIX: limit to last 6 messages only
   };
 
   // ==============================
@@ -109,42 +112,27 @@ export async function POST(req: Request) {
   // COMPANY QUERY DETECTION
   // ==============================
   const companyKeywords = [
-    // General company
     "company", "about you", "about your company", "organization",
     "business details", "who are you", "linksmart", "link smart",
     "founded", "founder", "ashish anand", "headquarters",
     "hsr layout", "bengaluru",
-
-    // Products & technology
     "smartdna", "smart dna", "non-clonable", "non clonable",
     "non-cloneable", "non cloneable", "qr code", "security label",
     "tamper", "anti-counterfeit", "anti counterfeit", "counterfeit",
     "reusable packaging", "security packaging", "authentication",
     "traceability", "track and trace", "track-and-trace",
     "warranty fraud", "refill fraud", "brand protection", "product security",
-
-    // Differentiators & tech
     "false acceptance", "far", "zero false", "surface agnostic",
     "cyber threat", "fake site", "digital duplicate", "clone", "cloning",
     "ip portfolio",
-
-    // Deployment
     "licensing", "bot model", "build operate transfer",
     "deployment model", "enterprise solution",
-
-    // Industries
     "fmcg", "pharmaceutical", "pharma", "automotive", "fintech",
     "agri-tech", "agritech", "logistics", "supply chain",
-
-    // Competitors
     "authentix", "pharmasecure", "trutag", "competitor",
     "vs ", "compare", "better than", "difference between",
-
-    // Contact
     "contact", "contact details", "email", "phone",
     "address", "website", "reach you", "reach out",
-
-    // Products general
     "product", "products", "services", "solution", "solutions",
     "what do you offer", "what do you do",
   ];
@@ -204,7 +192,8 @@ GREETING INSTRUCTIONS:
 - Introduce yourself as the Linksmart virtual assistant in 1 sentence.
 - Briefly mention 2–3 things you can help with (e.g. smartDNA® products, company info, competitor comparisons, industry solutions).
 - Invite them to ask their question.
-- Keep the response short, warm, and inviting — no more than 4–5 lines.`,
+- Keep the response short, warm, and inviting — no more than 4–5 lines.
+- ONLY respond to the greeting. Do NOT summarize or mention any previous messages.`,
         },
         { role: "user", content: lastContent },
       ],
@@ -234,7 +223,8 @@ FAREWELL INSTRUCTIONS:
 - Express that it was a pleasure assisting them.
 - Remind them they can return anytime with questions about Linksmart or its products.
 - End with a positive, encouraging sign-off using an emoji (e.g. 🚀 😊 🌟 🤝).
-- Keep it short — 2–3 lines maximum.`,
+- Keep it short — 2–3 lines maximum.
+- ONLY respond to the farewell. Do NOT summarize or mention any previous messages.`,
         },
         { role: "user", content: lastContent },
       ],
@@ -262,6 +252,7 @@ COMPETITOR COMPARISON FORMATTING RULES:
 - Table columns = one per company (LinkSmart smartDNA® + any competitors mentioned).
 - Use ✅ for Yes, ❌ for No, ⚠️ for Partial/Varies in table cells.
 - After the table, write a confident 2–3 sentence summary highlighting Linksmart's key advantages.
+- ONLY answer the latest user question. Do NOT recap or summarize previous messages.
 
 ${companyInfo}`
       : `You are a professional AI brand ambassador for Linksmart Technologies Pvt Ltd.
@@ -269,6 +260,8 @@ Use ONLY the following company information to answer questions.
 Be accurate, structured, and helpful. Do not fabricate any information beyond what is provided.
 
 ${styleGuide}
+
+IMPORTANT: Answer ONLY the latest user question. Do NOT summarize or repeat previous conversation messages.
 
 ${companyInfo}`;
 
@@ -278,10 +271,7 @@ ${companyInfo}`;
       model: groq("llama-3.3-70b-versatile"),
       temperature: 0.3,
       messages: [
-        {
-          role: "system",
-          content: systemPrompt,
-        },
+        { role: "system", content: systemPrompt },
         ...history,
       ],
     });
@@ -309,7 +299,8 @@ ${styleGuide}
 
 - Use 💻 or 🧑‍💻 for code-related section headers.
 - Always wrap code examples in proper markdown code blocks with the language name specified.
-- Do not include any Linksmart company information in programming answers.`,
+- Do not include any Linksmart company information in programming answers.
+- ONLY answer the latest user question. Do NOT summarize or repeat previous conversation messages.`,
         },
         ...history,
       ],
@@ -339,7 +330,8 @@ GENERAL QUERY GUIDELINES:
 - Answer general knowledge questions helpfully and accurately.
 - If the topic relates to supply chain, fraud, packaging, authentication, or tech — naturally mention how Linksmart's expertise is relevant.
 - For completely unrelated topics, answer professionally without forcing a company connection.
-- Never mention Llama, Meta, OpenAI, or any AI model identity.`,
+- Never mention Llama, Meta, OpenAI, or any AI model identity.
+- ONLY answer the latest user question. Do NOT summarize or repeat previous conversation messages.`,
       },
       ...history,
     ],
