@@ -179,7 +179,7 @@ export async function POST(req: Request) {
     console.log("Greeting branch triggered");
 
     const result = await streamText({
-      model: groq("llama-3.3-70b-versatile"),
+      model: groq("llama-3.1-8b-instant"),
       temperature: 0.5,
       messages: [
         {
@@ -210,7 +210,7 @@ GREETING INSTRUCTIONS:
     console.log("Farewell branch triggered");
 
     const result = await streamText({
-      model: groq("llama-3.3-70b-versatile"),
+      model: groq("llama-3.1-8b-instant"),
       temperature: 0.5,
       messages: [
         {
@@ -269,7 +269,7 @@ ${companyInfo}`;
     const history = await buildHistory();
 
     const result = await streamText({
-      model: groq("llama-3.3-70b-versatile"),
+      model: groq("llama-3.1-8b-instant"),
       temperature: 0.3,
       messages: [
         { role: "system", content: systemPrompt },
@@ -289,7 +289,7 @@ ${companyInfo}`;
     const history = await buildHistory();
 
     const result = await streamText({
-      model: groq("llama-3.3-70b-versatile"),
+      model: groq("llama-3.1-8b-instant"),
       temperature: 0.3,
       messages: [
         {
@@ -318,7 +318,7 @@ ${styleGuide}
   const history = await buildHistory();
 
   const result = await streamText({
-    model: groq("llama-3.3-70b-versatile"),
+    model: groq("llama-3.1-8b-instant"),
     temperature: 0.4,
     messages: [
       {
