@@ -14,13 +14,15 @@ import {
 import { ThreadListSidebar } from "@/components/assistant-ui/threadlist-sidebar";
 import { Separator } from "@/components/ui/separator";
 import { motion } from "framer-motion";
+import { useMemo } from "react";
+
+// Create transport OUTSIDE component so it's never recreated on re-render
+const transport = new AssistantChatTransport({
+  api: "/api/chat",
+});
 
 export const Assistant = () => {
-  const runtime = useChatRuntime({
-    transport: new AssistantChatTransport({
-      api: "/api/chat",
-    }),
-  });
+  const runtime = useChatRuntime({ transport });
 
   return (
     <AssistantRuntimeProvider runtime={runtime}>
